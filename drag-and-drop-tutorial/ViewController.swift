@@ -6,12 +6,12 @@
 //
 
 import UIKit
+import UniformTypeIdentifiers
 
 class ViewController: UIViewController {
     
     // MARK: - Properties
     private var imageView: UIImageView!
-    private var customView: UIView!
     
     // MARK: - View Life Cycles
     override func viewDidLoad() {
@@ -20,6 +20,7 @@ class ViewController: UIViewController {
         
         configureViewController()
         configureUI()
+        setupDropInteraction()
     }
     
     // MARK: - Functions
@@ -31,7 +32,6 @@ class ViewController: UIViewController {
     
     private func configureUI() {
         setupImageView()
-        setupCustomView()
         setupConstraints()
     }
     
@@ -43,25 +43,50 @@ class ViewController: UIViewController {
         view.addSubview(imageView)
     }
     
-    private func setupCustomView() {
-        customView = UIView()
-        customView.translatesAutoresizingMaskIntoConstraints = false
-        customView.backgroundColor = .systemPink
-        
-        view.addSubview(customView)
-    }
-    
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -100),
+            imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -50),
             imageView.widthAnchor.constraint(equalToConstant: 200),
-            imageView.heightAnchor.constraint(equalToConstant: 200),
-            
-            customView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            customView.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 50),
-            customView.widthAnchor.constraint(equalToConstant: 200),
-            customView.heightAnchor.constraint(equalToConstant: 200)
+            imageView.heightAnchor.constraint(equalToConstant: 200)
         ])
+    }
+    
+    private func setupDropInteraction() {
+        let dropInteraction = UIDropInteraction(delegate: self)
+        imageView.addInteraction(dropInteraction)
+        
+        imageView.isUserInteractionEnabled = true
+    }
+}
+
+// MARK: - Extension
+extension ViewController: UIDropInteractionDelegate {
+    
+    func dropInteraction(_ interaction: UIDropInteraction, canHandle session: UIDropSession) -> Bool {
+        return session.hasItemsConforming(toTypeIdentifiers: [UTType.image.identifier]) && session.items.count == 1
+    }
+    
+    func dropInteraction(_ interaction: UIDropInteraction, sessionDidUpdate session: UIDropSession) -> UIDropProposal {
+        
+        let dropLocation = session.location(in: self.view)
+        let operation: UIDropOperation
+        
+        if imageView.frame.contains(dropLocation) {
+            operation = session.localDragSession == nil ? .copy : .move
+        } else {
+            operation = .cancel
+        }
+        
+        return UIDropProposal(operation: operation)
+    }
+    
+    func dropInteraction(_ interaction: UIDropInteraction, performDrop session: UIDropSession) {
+        
+        session.loadObjects(ofClass: UIImage.self) { imageItems in
+            if let image = imageItems.first as? UIImage {
+                self.imageView.image = image
+            }
+        }
     }
 }
