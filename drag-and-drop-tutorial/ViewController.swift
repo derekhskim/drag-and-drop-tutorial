@@ -20,6 +20,7 @@ class ViewController: UIViewController {
         
         configureViewController()
         configureUI()
+        setupDragInteraction()
         setupDropInteraction()
     }
     
@@ -39,6 +40,7 @@ class ViewController: UIViewController {
         imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.image = UIImage(named: "placeholder")
+        imageView.isUserInteractionEnabled = true
         
         view.addSubview(imageView)
     }
@@ -52,15 +54,31 @@ class ViewController: UIViewController {
         ])
     }
     
+    private func setupDragInteraction() {
+        let dragInteraction = UIDragInteraction(delegate: self)
+        imageView.addInteraction(dragInteraction)
+    }
+    
     private func setupDropInteraction() {
         let dropInteraction = UIDropInteraction(delegate: self)
         imageView.addInteraction(dropInteraction)
-        
-        imageView.isUserInteractionEnabled = true
     }
 }
 
 // MARK: - Extension
+extension ViewController: UIDragInteractionDelegate {
+    
+    func dragInteraction(_ interaction: UIDragInteraction, itemsForBeginning session: UIDragSession) -> [UIDragItem] {
+        guard let image = imageView.image else { return [] }
+        
+        let provider = NSItemProvider(object: image)
+        let item = UIDragItem(itemProvider: provider)
+        item.localObject = image
+        
+        return [item]
+    }
+}
+
 extension ViewController: UIDropInteractionDelegate {
     
     func dropInteraction(_ interaction: UIDropInteraction, canHandle session: UIDropSession) -> Bool {
